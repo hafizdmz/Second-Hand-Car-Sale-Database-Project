@@ -59,5 +59,60 @@ for i in range(50):
 ```
 
 ## Transactional Query
+Case : Finding all cars sold by seller 'Daru Pratiwi'
+```
+SELECT a.car_id, brand, car_mode, prod_year, price, date_posted
+FROM sellers
+         JOIN adverts a ON sellers.seller_id = a.seller_id
+         JOIN car_products cp ON cp.car_id = a.car_id
+WHERE seller_name = 'Daru Pratiwi';
+```
+
+
+Case : Nearest car sold from city_id 3173
+```
+SELECT a.car_id,
+       brand,
+       car_mode,
+       prod_year,
+       price,
+       SQRT((latittude - (-6.1352)) ^ 2 + (longitude - (106.813301)) ^ 2) AS distance
+FROM adverts a
+         JOIN car_products cp ON a.car_id = cp.car_id
+         JOIN sellers s ON s.seller_id = a.seller_id
+         JOIN cities c ON c.city_id = s.city_id
+ORDER BY distance;
+```
 
 ## Analytical Query
+Case : Price comparison based for each city
+```
+SELECT city_name, brand, car_mode AS model, prod_year AS year, price, AVG(price) OVER (PARTITION BY car_mode, prod_year)
+FROM car_products
+         JOIN adverts a ON car_products.car_id = a.car_id
+         JOIN sellers s ON s.seller_id = a.seller_id
+         JOIN cities c ON s.city_id = c.city_id
+ORDER BY city_name, model;
+```
+
+Case: Percentage comparison of car price and bid price in the last 6 months
+```
+WITH average_price AS (SELECT car_mode, ROUND(AVG(price)) AS avg_price
+                       FROM adverts a
+                                JOIN car_products cp ON cp.car_id = a.car_id
+                       GROUP BY car_mode),
+     average_6months_bid AS (SELECT car_mode, ROUND(AVG(bid_price)) AS avg_bid_6months
+                             FROM adverts a
+                                      JOIN bids b ON a.advert_id = b.advert_id
+                                      JOIN car_products c ON c.car_id = a.car_id
+                             WHERE bid_date >= NOW() - INTERVAL '6 months'
+                             GROUP BY car_mode)
+SELECT am.car_mode                                     AS model,
+       avg_price,
+       avg_bid_6months,
+       (avg_price - avg_bid_6months)                   AS difference,
+       (avg_price - avg_bid_6months) / avg_price * 100 AS diff_percentage
+FROM average_price ap
+         JOIN average_6months_bid am ON am.car_mode = ap.car_mode
+ORDER BY diff_percentage DESC;
+```
