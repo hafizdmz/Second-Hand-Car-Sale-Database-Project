@@ -116,3 +116,5 @@ FROM average_price ap
          JOIN average_6months_bid am ON am.car_mode = ap.car_mode
 ORDER BY diff_percentage DESC;
 ```
+
+Easy report link : https://medium.com/@hafiz.muhammad0806/building-a-mock-secondhand-car-sales-database-with-python-and-postgresql-a-practical-guide-8324ee57fc7d
